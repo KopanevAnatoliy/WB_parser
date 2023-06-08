@@ -5,6 +5,7 @@ import pandas as pd
 from os.path import exists
 from datetime import datetime
 import logging
+from sys import stdout
 
 class WB_parser:
 
@@ -12,7 +13,7 @@ class WB_parser:
         self.query = query
         self.n_pages = n_pages
         self.date = datetime.now().date()
-        self.encoding = "1251"
+        self.encoding = "utf8"
         
         self.parse()
     
@@ -60,10 +61,10 @@ class WB_parser:
         """
         ordered_articles = {}
 
-        for page in range(1, self.n_pages+1):
-            json_data = self.parse_page(url,params=self.get_page_url(page), page=page)            
-            ordered_articles[page-1] = [advert.get("id") for advert in json_data.get("data",{}).get('products')]
-            time.sleep(random()*1 + 1)
+        for page in range(1, min(self.n_pages+1,61)):
+            json_data = self.parse_page(**self.get_page_url(page), page=page)            
+            ordered_articles[page-1] = [advert.get("id") for advert in json_data.get("data",{}).get('products',[])]
+            # time.sleep(random()*1 + 1)
 
         priority = self.get_priority_orders(url=self.get_priority_orders_url())
         for key in priority.keys():
@@ -120,7 +121,7 @@ class WB_parser:
             "sort": "popular",
             "spp": "0",
             "suppressSpellcheck": "false"}
-        return url, params
+        return {"url": url, "params": params}
     
     def get_main_data_url(self, article):
         """
@@ -278,12 +279,12 @@ class WB_parser:
         парсинг карточек.
         """  
         articles = self.get_cards()
-        for article in articles[:2]:
+        for index, article in enumerate(articles):
             self.parse_main_data(url=self.get_main_data_url(article), article=article)
             self.parse_sub_data(url=self.get_sub_data_url(article), article=article)
             self.parse_history(url=self.get_history_url(article), article=article)
             self.parse_qnt(url=self.get_qnt_url(article), article=article)
-            logging.info(f"{article} saved")
+            logging.info(f"{article} saved | index {index}")
         
     def save_to_csv(self, data, columns, file_name):
         """
@@ -303,13 +304,15 @@ class WB_parser:
         
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.INFO, 
-        filename="logs.log", 
-        filemode="a", 
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler("WB_parser.log", mode="a"),
+            logging.StreamHandler(stdout)
+        ], 
         format="[%(asctime)s] [%(levelname)s] [%(message)s]"
     )
     query = input("Введите запрос: ")
-    n_pages = input("Введите количество страниц: ")
+    n_pages = int(input("Введите количество страниц: "))
     WB_parser(query, n_pages)
         
             
