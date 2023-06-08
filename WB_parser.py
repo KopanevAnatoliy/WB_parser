@@ -18,6 +18,9 @@ class WB_parser:
     
     
     def try_(func):
+        """
+        Проверяет код ответа, пишет логи, достает json.
+        """
         def _wrapper(self, *args, **kwargs):
             request = requests.get(kwargs.get("url"), params=kwargs.get("params"))
             article = kwargs.get("article")
@@ -39,6 +42,7 @@ class WB_parser:
     @try_
     def get_priority_orders(self, json_data, **kwargs):
         """
+        Получает список рекламных карточек и их позиции на странице.
         out: dict {page: {position: article}}
         """
         out_of_order = [int(i.get("id")) for i in json_data.get("adverts")]
@@ -50,6 +54,10 @@ class WB_parser:
         return positions    
         
     def get_cards(self):
+        """
+        Собирает список карточек с n страниц, дополняет рекламными позициями.
+        out: list
+        """
         ordered_articles = {}
 
         for page in range(1, self.n_pages+1):
@@ -79,6 +87,9 @@ class WB_parser:
         return "13"
     
     def get_server_path(self, article):
+        """
+        Собирает часть url для карточки.
+        """
         vol = article // 100_000
         basket = self.get_basket_number(vol)
         part = article // 1_000
@@ -86,9 +97,15 @@ class WB_parser:
         return url
     
     def get_priority_orders_url(self):
+        """
+        url с рекламными карточками.
+        """
         return f"https://catalog-ads.wildberries.ru/api/v5/search?keyword={self.query}"
     
     def get_page_url(self, page):
+        """
+        url n-ой страницы поисковой выдачи.
+        """
         url = f"https://search.wb.ru/exactmatch/ru/common/v4/search?"
         params = {
             "TestGroup": "no_test",
@@ -106,27 +123,45 @@ class WB_parser:
         return url, params
     
     def get_main_data_url(self, article):
+        """
+        url основной информации о карточке.
+        """
         path = self.get_server_path(article)
         return f"{path}ru/card.json" 
     
     def get_qnt_url(self, article):
+        """
+        url с количеством продаж.
+        """
         return f"https://product-order-qnt.wildberries.ru/by-nm/?nm={article}"
     
     def get_sub_data_url(self, article):
+        """
+        url дополнительной информации о карточке.
+        """
         return f"https://card.wb.ru/cards/detail?appType=1&nm={article}"
     
     def get_history_url(self, article):
+        """
+        url с историческими ценами карточки.
+        """
         path = self.get_server_path(article)
         return f"{path}price-history.json"
     
     @try_
     def parse_qnt(self, json_data, **kwargs):
+        """
+        парсинг количества проданных товаров.
+        """        
         file_name = "qnt.csv"
         data = (kwargs.get("article"), json_data[0].get("qnt"), self.date)
         self.save_to_csv([data], ["article", "qnt", "parse_date"], file_name)
     
     @try_    
     def parse_sub_data(self, json_data, **kwargs):
+        """
+        парсинг дополнительной информации о карточке.
+        """  
         file_name = "sub_data.csv"
         data = [kwargs.get("article")]
         data.append( json_data.get("data", {}).get("products", [{}])[0].get("priceU") )
@@ -142,6 +177,9 @@ class WB_parser:
     
     @try_
     def parse_history(self, json_data, **kwargs):
+        """
+        парсинг истории цены.
+        """  
         file_name = "history.csv"
         data = [ (kwargs.get("article"), 
                   row.get("dt"), 
@@ -152,6 +190,9 @@ class WB_parser:
                 
     @try_
     def parse_main_data(self, json_data, **kwargs):
+        """
+        парсинг основной информации о карточке.
+        """  
         file_name = "main_data.csv"        
         data = [kwargs.get("article")]
         data.append( json_data.get("imt_id") )
@@ -180,6 +221,9 @@ class WB_parser:
         self.parse_kinds(json_data)
     
     def parse_options(self, json_data):
+        """
+        парсинг опций карточки в отдельный файл.
+        """  
         file_name = "options.csv"
         data = []
         article = json_data.get("nm_id")
@@ -189,6 +233,9 @@ class WB_parser:
         self.save_to_csv(data, ["article", "name", "value", "parse_date"], file_name)
 
     def parse_compositions(self, json_data):
+        """
+        парсинг материалов изготовления карточки в отдельный файл.
+        """  
         file_name = "compositions.csv"
         article = json_data.get("nm_id")
         data = [(article, composition.get("name"), self.date) 
@@ -196,6 +243,9 @@ class WB_parser:
         self.save_to_csv(data, ["article", "compositions", "parse_date"], file_name)
         
     def parse_colors(self, json_data):
+        """
+        парсинг доступных цветов в отдельный файл.
+        """  
         file_name = "colors.csv"
         article = json_data.get("nm_id")
         data = [(article, color, self.date) 
@@ -203,6 +253,9 @@ class WB_parser:
         self.save_to_csv(data, ["article", "colors", "parse_date"], file_name)
 
     def parse_sizes(self, json_data):
+        """
+        парсинг размеров в отдельный файл.
+        """  
         file_name = "sizes.csv"
         article = json_data.get("nm_id")
         data = [(article, size.get("name"), self.date) 
@@ -210,6 +263,9 @@ class WB_parser:
         self.save_to_csv(data, ["article", "size", "parse_date"], file_name)
 
     def parse_kinds(self, json_data):
+        """
+        парсинг назначения товара в отдельный файл.
+        """  
         file_name = "kinds.csv"
         article = json_data.get("nm_id")
         data = [(article, kind, self.date) 
@@ -217,6 +273,10 @@ class WB_parser:
         self.save_to_csv(data, ["article", "kinds", "parse_date"], file_name)
     
     def parse(self):
+        """
+        in: list(articles)
+        парсинг карточек.
+        """  
         articles = self.get_cards()
         for article in articles[:2]:
             self.parse_main_data(url=self.get_main_data_url(article), article=article)
@@ -226,6 +286,9 @@ class WB_parser:
             logging.info(f"{article} saved")
         
     def save_to_csv(self, data, columns, file_name):
+        """
+        сохранения в файл.
+        """
         df = pd.DataFrame(
             data, 
             columns=columns)
@@ -236,6 +299,8 @@ class WB_parser:
             encoding=self.encoding,
             mode="a"
         )
+
+        
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO, 
