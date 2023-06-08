@@ -310,6 +310,6 @@ if __name__ == "__main__":
     )
     query = input("Введите запрос: ")
     n_pages = input("Введите количество страниц: ")
-
+    WB_parser(query, n_pages)
         
             
