@@ -21,6 +21,7 @@ class WB_parser:
     
     def try_(func):
         """
+        in: kwarg["url"]
         Проверяет код ответа, пишет логи, достает json.
         """
         def _wrapper(self, *args, **kwargs):
