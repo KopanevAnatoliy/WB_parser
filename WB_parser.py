@@ -10,6 +10,7 @@ from sys import stdout
 class WB_parser:
 
     def __init__(self, query: str, n_pages: int = 1):
+        self.MAX_PAGE = 60
         self.query = query
         self.n_pages = n_pages
         self.date = datetime.now().date()
@@ -61,9 +62,9 @@ class WB_parser:
         """
         ordered_articles = {}
 
-        for page in range(1, min(self.n_pages+1,61)):
-            json_data = self.parse_page(**self.get_page_url(page), page=page)            
-            ordered_articles[page-1] = [advert.get("id") for advert in json_data.get("data",{}).get('products',[])]
+        for page in range(0, min(self.n_pages,self.MAX_PAGE)):
+            json_data = self.parse_page(**self.get_page_url(page+1), page=page)            
+            ordered_articles[page] = [advert.get("id") for advert in json_data.get("data",{}).get('products',[])]
             # time.sleep(random()*1 + 1)
 
         priority = self.get_priority_orders(url=self.get_priority_orders_url())
@@ -259,7 +260,7 @@ class WB_parser:
         """  
         file_name = "sizes.csv"
         article = json_data.get("nm_id")
-        data = [(article, size.get("name"), self.date) 
+        data = [(article, size.get("tech_size"), self.date) 
                 for size in json_data.get("sizes_table", {}).get("values", [])]        
         self.save_to_csv(data, ["article", "size", "parse_date"], file_name)
 
