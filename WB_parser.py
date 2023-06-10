@@ -6,6 +6,7 @@ from os.path import exists
 from datetime import datetime
 import logging
 from sys import stdout
+from more_itertools import unique_everseen
 
 class WB_parser:
 
@@ -72,7 +73,7 @@ class WB_parser:
         for key in priority.keys():
             for k, v in priority[key].items():
                 ordered_articles.get(key, []).insert(k, v)
-        return [item for sublist in ordered_articles.values() for item in sublist]
+        return list(unique_everseen([item for sublist in ordered_articles.values() for item in sublist]))
     
     @try_
     def parse_page(self, json_data, **kwargs):
