@@ -43,7 +43,7 @@ class CardsSpider(scrapy.Spider):
         data["certificate"] = json_data.get("certificate", {}).get("verified")
         data["options"] = self.parse_options(json_data)
         data["compositions"] = [composition.get("name") for composition in json_data.get("compositions", [])]
-        data["tech_size"] = [size.get("tech_size") for size in json_data.get("sizes_table", {}).get("values", [])]
+        data["sizes"] = [size.get("tech_size") for size in json_data.get("sizes_table", {}).get("values", [])]
         data["kinds"] = json_data.get("kinds", [None])[0]
         # data["colors"] = [color for color in json_data.get("colors", [])]
         yield data
@@ -57,7 +57,7 @@ class CardsSpider(scrapy.Spider):
         data["salePrice"] = json_data.get("data", {}).get("products", [{}])[0].get("salePriceU")
         data["logisticsCost"] = json_data.get("data", {}).get("products", [{}])[0].get("logisticsCost")
         data["sale"] = json_data.get("data", {}).get("products", [{}])[0].get("sale")
-        data["reviewRating"] = json_data.get("data", {}).get("products", [{}])[0].get("reviewRating")
+        data["rating"] = json_data.get("data", {}).get("products", [{}])[0].get("reviewRating")
         data["feedbacks"] = json_data.get("data", {}).get("products", [{}])[0].get("feedbacks")
         yield data
 
@@ -115,12 +115,12 @@ class CardsSpider(scrapy.Spider):
         """
         path = self.get_server_path(article)
         return f"{path}ru/card.json"   
-    
+
     def get_sub_data_url(self, article):
         """
         url дополнительной информации о карточке.
         """
-        return f"https://card.wb.ru/cards/detail?appType=1&nm={article}"
+        return f"https://card.wb.ru/cards/detail?appType=1&curr=rub&dest=-1257786&spp=0&nm={article}"
     
     def get_history_url(self, article):
         """

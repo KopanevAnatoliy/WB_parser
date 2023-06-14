@@ -3,6 +3,7 @@ import requests
 from more_itertools import unique_everseen
 from time import sleep
 from CardsSpider import CardsSpider
+from os.path import exists
 import converter
 
 
@@ -50,7 +51,11 @@ def get_ordered_cards(query: str, n_pages: int) -> list:
     """
     json_data = requests.get(get_advertising_cards_url(query)).json()
     cards = get_cards(query, n_pages)
-    advertising_cards = [int(i.get("id")) for i in json_data.get("adverts")]
+    if json_data.get("adverts"):
+        advertising_cards = [int(i.get("id")) for i in json_data.get("adverts")]
+    else:
+        return list(unique_everseen([item for sublist in cards.values() for item in sublist]))
+    
     positions = {}
     for page in json_data.get("pages"):
         positions[page.get("page")-1] = {k-1: advertising_cards.pop(0)
@@ -67,9 +72,18 @@ def main():
     query = input("Введите запрос: ")
     n_pages = int(input("Введите количество страниц: "))
     articles = get_ordered_cards(query, n_pages)
+    filename = "data.json"
+    postfix = 1
+    while True:
+        if exists(file_name):
+            filename = f"data_{postfix}.json"
+        else:
+            break
+
     process = CrawlerProcess(settings={
+        # "DOWNLOAD_DELAY": 0.1,
         "FEEDS": {
-            "data.json": {
+            filename: {
                 "format": "json",
                 "encoding": "utf8"},
         },
@@ -77,7 +91,8 @@ def main():
 
     process.crawl(CardsSpider, articles=articles)
     process.start()
-    converter.main("data.json")
+    print(f"Количество карточек: {len(articles)}")
+    converter.main(filename)
 
 
 if __name__ == "__main__":
