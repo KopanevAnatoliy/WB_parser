@@ -75,8 +75,9 @@ def main():
     filename = "data.json"
     postfix = 1
     while True:
-        if exists(file_name):
+        if exists(filename):
             filename = f"data_{postfix}.json"
+            postfix += 1
         else:
             break
 
