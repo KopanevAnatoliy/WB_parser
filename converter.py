@@ -1,7 +1,7 @@
 import json
 import pandas as pd
-from datetime import date
 from datetime import datetime
+import re
 
 ENCODING = "utf8"
 
@@ -70,16 +70,29 @@ def show_convert_statistic(main_data, options, history, compositions, sizes):
     print(f"    Основные данные: {main_data.shape[0]}")
     print(f"    Опции: всего {options.shape[0]}, уникальных артикулов {options.index.nunique()}")
     print(f"    Материалы: всего {compositions.shape[0]}, уникальных артикулов {compositions.index.nunique()}")
-    print(f"    Размеры: всего {sizes.shape[0]}, уникальных артикулов{sizes.index.nunique()}")
-    print(f"    Исторические цены: всего {history.shape[0]}, уникальных артикулов{history.index.nunique()}")
+    print(f"    Размеры: всего {sizes.shape[0]}, уникальных артикулов {sizes.index.nunique()}")
+    print(f"    Исторические цены: всего {history.shape[0]}, уникальных артикулов {history.index.nunique()}")
 
 def convert_sizes(main_data):
     data = main_data[["article", "parse_date", "sizes"]].explode("sizes").dropna(axis=0)
     return data
 
+def split_compositions(string):
+    finded = re.findall(r'([А-Яа-яA-Za-z /-]*[А-Яа-яA-Za-z]+|[0-9]+[0-9,/.]*)', string)
+    if len(finded) > 1 and finded[0].split(",")[0].isnumeric():
+        finded = finded[::-1]
+    if len(finded) > 1:
+        return list(zip(finded[::2],finded[1::2]))
+    return (finded, float("nan"))
+    
 def convert_compositions(main_data):
     data = main_data[["article", "parse_date", "compositions"]].explode("compositions").dropna(axis=0)
-    return data
+    data["compositions"] = data["compositions"].apply(split_compositions)
+    data = data.explode("compositions")
+    data["name"] = data["compositions"].str[0]
+    data["value"] = data["compositions"].str[1]
+    data = data.dropna(how="all", subset=["name","value"])
+    return data[["article", "parse_date", "name", "value"]]
 
 def convert_main_data(sub_data, main_data, qnt):
     sub_data["salePrice"] = sub_data["salePrice"] / 100
@@ -123,4 +136,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main("data.json")
+    main(input("Введите имя файла: "))

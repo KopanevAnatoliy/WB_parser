@@ -2,6 +2,7 @@ from scrapy.crawler import CrawlerProcess
 import requests
 from more_itertools import unique_everseen
 from time import sleep
+from datetime import datetime
 from CardsSpider import CardsSpider
 from os.path import exists
 import converter
@@ -69,15 +70,16 @@ def get_ordered_cards(query: str, n_pages: int) -> list:
 
 
 def main():
+    date = datetime.now().date()
     query = input("Введите запрос: ")
     n_pages = int(input("Введите количество страниц: "))
     articles = get_ordered_cards(query, n_pages)
-    filename = "data.json"
     postfix = 1
+    filename = f"{date}_{query}_{postfix}.json"   
     while True:
         if exists(filename):
-            filename = f"data_{postfix}.json"
             postfix += 1
+            filename = f"{date}_{query}_{postfix}.json"            
         else:
             break
 
