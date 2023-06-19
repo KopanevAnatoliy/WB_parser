@@ -59,6 +59,9 @@ def convert(data):
     sizes.to_csv("sizes.csv", encoding=ENCODING)
 
 def show_parse_statistic(main_data, sub_data, qnt, history):
+    """
+    Выводит количество спрасенных страниц по категориям.
+    """
     print(f"Собрано:")        
     print(f"    Основные данные: {main_data.shape}")
     print(f"    Дополнительные данные: {sub_data.shape}")
@@ -66,6 +69,9 @@ def show_parse_statistic(main_data, sub_data, qnt, history):
     print(f"    Исторические цены: {history.shape}")
 
 def show_convert_statistic(main_data, options, history, compositions, sizes):
+    """
+    Выводит количество сконвертированных данных.
+    """
     print(f"Конвертировано:")        
     print(f"    Основные данные: {main_data.shape[0]}")
     print(f"    Опции: всего {options.shape[0]}, уникальных артикулов {options.index.nunique()}")
@@ -74,10 +80,17 @@ def show_convert_statistic(main_data, options, history, compositions, sizes):
     print(f"    Исторические цены: всего {history.shape[0]}, уникальных артикулов {history.index.nunique()}")
 
 def convert_sizes(main_data):
+    """
+    Извлекает размеры товаров в отдельный DataFrame
+    """
     data = main_data[["article", "parse_date", "sizes"]].explode("sizes").dropna(axis=0)
     return data
 
 def split_compositions(string):
+    """
+    Раделяет материалы на два столбца
+    """
+    # поиск слов или чисел
     finded = re.findall(r'([А-Яа-яA-Za-z /-]*[А-Яа-яA-Za-z]+|[0-9]+[0-9,/.]*)', string)
     if len(finded) > 1 and finded[0].split(",")[0].isnumeric():
         finded = finded[::-1]
@@ -86,6 +99,9 @@ def split_compositions(string):
     return (finded, float("nan"))
     
 def convert_compositions(main_data):
+    """
+    Конвертирует материалы.
+    """
     data = main_data[["article", "parse_date", "compositions"]].explode("compositions").dropna(axis=0)
     data["compositions"] = data["compositions"].apply(split_compositions)
     data = data.explode("compositions")
@@ -95,6 +111,9 @@ def convert_compositions(main_data):
     return data[["article", "parse_date", "name", "value"]]
 
 def convert_main_data(sub_data, main_data, qnt):
+    """
+    Конвертирует основную информацию.
+    """
     sub_data["salePrice"] = sub_data["salePrice"] / 100
     sub_data["price"] = sub_data["price"] / 100
     data =  pd.concat(
@@ -106,13 +125,19 @@ def convert_main_data(sub_data, main_data, qnt):
         axis=1)
     return data
 
-def convert_options(data):    
+def convert_options(data):
+    """
+    Конвертирует опции.
+    """
     exploded = data[["article", "parse_date", "options"]].explode("options")
     exploded["name"] = exploded["options"].str[0]
     exploded["value"] = exploded["options"].str[1]
     return exploded.drop(columns="options")
 
 def convert_history(history, sub_data):
+    """
+    Конвертирует исторические цены.
+    """
     prices = history.drop(columns=["article", "parse_date", "history"]) \
             .rename(columns=lambda x: datetime.fromtimestamp(int(x)).date())
     prices = pd.concat([prices, sub_data["salePrice"]], axis=1) \

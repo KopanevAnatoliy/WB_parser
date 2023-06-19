@@ -63,7 +63,7 @@ class CardsSpider(scrapy.Spider):
 
     def parse_history(self, response, data):
         """
-        парсинг истории цены.
+        парсинг исторических цен.
         """          
         json_data = response.json()
         data["history"] = True
@@ -81,7 +81,7 @@ class CardsSpider(scrapy.Spider):
     
     def parse_options(self, json_data):
         """
-        парсинг опций карточки в отдельный файл.
+        парсинг опций карточки.
         """  
         data = []
         for group in json_data.get("grouped_options", []):
